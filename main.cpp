@@ -8,6 +8,7 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <random>
 #include "openssl-benchmark.h"
 #include <openssl/conf.h>
 #include <openssl/err.h>
@@ -89,8 +90,20 @@ const unsigned char iv[] = {
     0x38, 0x39, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35
 };
 
+const int PLAINTEXT_SIZE_100MB = 100 * 1024 * 1024;
+const int PLAINTEXT_SIZE_1GB = 1024 * 1024 * 1024;
+
+void generate_plaintext_random(unsigned char *plaintext, const int size) {
+    std::random_device rd;
+    std::mt19937 mt(rd());
+    std::uniform_real_distribution dist(1.0, 256.0);
+    for (size_t j = 0; j < size; ++j) {
+        plaintext[j] = static_cast<unsigned char>(dist(mt));
+    }
+}
+
 int main() {
-    std::ofstream csv_file("benchmark-results.csv");
+    std::ofstream csv_file("benchmark-results-2.csv");
     if (!csv_file.is_open()) {
         std::cerr << "Failed to open benchmark-results.csv for writing." << std::endl;
         return 1;
@@ -101,14 +114,28 @@ int main() {
     const auto write_csv_rows = [&csv_file](
         const std::string &cipher_name,
         const int key_size,
-        const std::string& mode,
+        const std::string &mode,
         const Benchmark &benchmark
     ) {
-        csv_file << cipher_name << ',' << key_size << ',' << mode << ",Encryption,100MB," << benchmark.encryption_time_100mb << '\n';
-        csv_file << cipher_name << ',' << key_size << ',' << mode << ",Decryption,100MB," << benchmark.decryption_time_100mb << '\n';
-        csv_file << cipher_name << ',' << key_size << ',' << mode << ",Encryption,1GB," << benchmark.encryption_time_1gb << '\n';
-        csv_file << cipher_name << ',' << key_size << ',' << mode << ",Decryption,1GB," << benchmark.decryption_time_1gb << '\n';
+        csv_file << cipher_name << ',' << key_size << ',' << mode << ",Encryption,100MB," << benchmark.
+                encryption_time_100mb << '\n';
+        csv_file << cipher_name << ',' << key_size << ',' << mode << ",Decryption,100MB," << benchmark.
+                decryption_time_100mb << '\n';
+        csv_file << cipher_name << ',' << key_size << ',' << mode << ",Encryption,1GB," << benchmark.encryption_time_1gb
+                << '\n';
+        csv_file << cipher_name << ',' << key_size << ',' << mode << ",Decryption,1GB," << benchmark.decryption_time_1gb
+                << '\n';
     };
+
+    std::cout << "Generating input data..." << std::endl;
+    auto *plaintext_100mb = new unsigned char[PLAINTEXT_SIZE_100MB];
+    auto *plaintext_1gb = new unsigned char[PLAINTEXT_SIZE_1GB];
+
+    auto *ciphertext_100mb = new unsigned char[PLAINTEXT_SIZE_100MB + EVP_MAX_BLOCK_LENGTH];
+    auto *ciphertext_1gb = new unsigned char[PLAINTEXT_SIZE_1GB + EVP_MAX_BLOCK_LENGTH];
+
+    generate_plaintext_random(plaintext_100mb, PLAINTEXT_SIZE_100MB);
+    generate_plaintext_random(plaintext_1gb, PLAINTEXT_SIZE_1GB);
 
     // Iterate through config by: cipher > key length > mode. Benchmark function handles encryption/decryption of 100Mb/1GB data.
     for (int cipherIdx = 0; cipherIdx < 3; ++cipherIdx) {
@@ -121,8 +148,16 @@ int main() {
         Benchmark benchmarks_256[3] = {};
 
         for (int mode_Idx = 0; mode_Idx < 3; ++mode_Idx) {
-            benchmark_cipher(cipher_128[mode_Idx], key_128, iv, benchmarks_128[mode_Idx]);
-            benchmark_cipher(cipher_256[mode_Idx], key_256, iv, benchmarks_256[mode_Idx]);
+            benchmark_cipher(cipher_128[mode_Idx], key_128, iv,
+                            plaintext_100mb, plaintext_1gb,
+                            PLAINTEXT_SIZE_100MB, PLAINTEXT_SIZE_1GB,
+                            ciphertext_100mb, ciphertext_1gb,
+                            benchmarks_128[mode_Idx]);
+            benchmark_cipher(cipher_256[mode_Idx], key_256, iv,
+                            plaintext_100mb, plaintext_1gb,
+                            PLAINTEXT_SIZE_100MB,PLAINTEXT_SIZE_1GB,
+                            ciphertext_100mb, ciphertext_1gb,
+                            benchmarks_256[mode_Idx]);
 
             write_csv_rows(CIPHER_NAMES[cipherIdx], 128, MODE_NAMES[mode_Idx], benchmarks_128[mode_Idx]);
             write_csv_rows(CIPHER_NAMES[cipherIdx], 256, MODE_NAMES[mode_Idx], benchmarks_256[mode_Idx]);
@@ -154,6 +189,10 @@ int main() {
 
     csv_file.close();
     std::cout << "CSV results written to benchmark-results.csv" << std::endl;
+    delete[] plaintext_100mb;
+    delete[] ciphertext_100mb;
+    delete[] plaintext_1gb;
+    delete[] ciphertext_1gb;
 
     return 0;
 }

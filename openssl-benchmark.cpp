@@ -7,44 +7,28 @@
 #include <openssl/evp.h>
 #include <iostream>
 
-constexpr int PLAINTEXT_SIZE_100MB = 100 * 1024 * 1024;
-constexpr int PLAINTEXT_SIZE_1GB = 1024 * 1024 * 1024;
-const std::string PLAINTEXT_LOREM =
-        "Et velit sint aute sit nostrud. Sunt irure incididunt laborum aliqua duis id duis Lorem. Consectetur minim Lorem dolore enim eiusmod id voluptate occaecat irure deserunt pariatur eu anim enim aute. Sit esse nisi duis. Elit aute nostrud nulla do officia ullamco anim. Fugiat ullamco commodo enim laboris aliqua officia elit mollit anim eu. Incididunt dolore ea elit aliquip irure duis veniam ex sunt qui fugiat sit. Do nulla commodo aliqua qui ullamco nulla esse proident exercitation aliqua in aute in. Est aliqua nostrud tempor sint aliquip officia exercitation amet. Nulla nisi ea ex dolor mollit proident non in proident cillum sit voluptate consectetur eiusmod.";
-
-// Generate a long plaintext using a repeated set of a predefined small string (lorem ipsum).
-void generate_plaintext(unsigned char *plaintext, const int size) {
-    for (size_t j = 0; j < size; j += PLAINTEXT_LOREM.size()) {
-        std::memcpy(
-            plaintext + j,
-            PLAINTEXT_LOREM.c_str(),
-            std::min(size - j,
-                     PLAINTEXT_LOREM.size()));
-    }
-}
-
 /**
  * Benchmark the encryption and decryption of a given cipher with specified key and IV, storing the results in the provided benchmark struct.
  * @param cipher
  * @param key The cipher key
  * @param iv The initialization vector
+ * @param plaintext_100mb The 100MB plaintext to encrypt
+ * @param plaintext_1gb The 1GB plaintext to encrypt
+ * @param plaintext_100mb_len The length of the 100MB plaintext
+ * @param plaintext_1gb_len The length of the 1GB plaintext
+ * @param ciphertext_100mb The buffer to store the resulting 100MB ciphertext
+ * @param ciphertext_1gb The buffer to store the resulting 1GB ciphertext
  * @param benchmark The benchmark struct to store the results in
  */
-void benchmark_cipher(const EVP_CIPHER *cipher, const unsigned char key[], const unsigned char iv[], Benchmark& benchmark) {
-    auto *plaintext_100mb = new unsigned char[PLAINTEXT_SIZE_100MB];
-    auto *ciphertext_100mb = new unsigned char[PLAINTEXT_SIZE_100MB + EVP_MAX_BLOCK_LENGTH];
-
-    generate_plaintext(plaintext_100mb, PLAINTEXT_SIZE_100MB);
-
-    auto *plaintext_1gb = new unsigned char[PLAINTEXT_SIZE_1GB];
-    auto *ciphertext_1gb = new unsigned char[PLAINTEXT_SIZE_1GB + EVP_MAX_BLOCK_LENGTH];
-
-    generate_plaintext(plaintext_1gb, PLAINTEXT_SIZE_1GB);
-
+void benchmark_cipher(const EVP_CIPHER *cipher, const unsigned char key[], const unsigned char iv[],
+                      const unsigned char plaintext_100mb[], const unsigned char plaintext_1gb[],
+                      const int plaintext_100mb_len, const int plaintext_1gb_len,
+                      unsigned char ciphertext_100mb[], unsigned char ciphertext_1gb[],
+                      Benchmark &benchmark) {
     auto start_100mb = clock();
     const size_t encrypted_100mb_len = encrypt(
         plaintext_100mb,
-        PLAINTEXT_SIZE_100MB,
+        plaintext_100mb_len,
         cipher,
         key,
         iv,
@@ -55,7 +39,7 @@ void benchmark_cipher(const EVP_CIPHER *cipher, const unsigned char key[], const
     auto start_1gb = clock();
     const size_t ciphertext_1gb_len = encrypt(
         plaintext_1gb,
-        PLAINTEXT_SIZE_1GB,
+        plaintext_1gb_len,
         cipher,
         key,
         iv,
@@ -63,8 +47,8 @@ void benchmark_cipher(const EVP_CIPHER *cipher, const unsigned char key[], const
     );
     benchmark.encryption_time_1gb = clock() - start_1gb;
 
-    auto *decryptedText_100mb = new unsigned char[PLAINTEXT_SIZE_100MB + EVP_MAX_BLOCK_LENGTH];
-    auto *decryptedText_1gb = new unsigned char[PLAINTEXT_SIZE_1GB];
+    auto *decryptedText_100mb = new unsigned char[plaintext_100mb_len + EVP_MAX_BLOCK_LENGTH];
+    auto *decryptedText_1gb = new unsigned char[plaintext_1gb_len];
 
     start_100mb = clock();
     const size_t decryptedText_100mb_len = decrypt(
@@ -92,10 +76,6 @@ void benchmark_cipher(const EVP_CIPHER *cipher, const unsigned char key[], const
 
     decryptedText_1gb[decryptedText_1gb_len] = '\0';
 
-    delete[] plaintext_100mb;
-    delete[] ciphertext_100mb;
-    delete[] plaintext_1gb;
-    delete[] ciphertext_1gb;
     delete[] decryptedText_100mb;
     delete[] decryptedText_1gb;
 }

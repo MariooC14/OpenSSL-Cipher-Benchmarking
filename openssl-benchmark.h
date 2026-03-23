@@ -14,7 +14,7 @@ struct Benchmark {
 };
 
 void handleErrors();
-void generate_plaintext(unsigned char *plaintext, int size);
+void generate_plaintext_lorem(unsigned char *plaintext, int size);
 int encrypt(const unsigned char *plaintext,
             int plaintext_len,
             const EVP_CIPHER *cipher,
@@ -29,6 +29,10 @@ int decrypt(const unsigned char *ciphertext,
         const unsigned char *iv,
         unsigned char *plaintext);
 
-void benchmark_cipher(const EVP_CIPHER* cipher, const unsigned char key[], const unsigned char iv[], Benchmark& benchmark);
+void benchmark_cipher(const EVP_CIPHER *cipher, const unsigned char key[], const unsigned char iv[],
+                      const unsigned char plaintext_100mb[], const unsigned char plaintext_1gb[],
+                      const int plaintext_100mb_len, const int plaintext_1gb_len,
+                      unsigned char ciphertext_100mb[], unsigned char ciphertext_1gb[],
+                      Benchmark &benchmark);
 
 #endif

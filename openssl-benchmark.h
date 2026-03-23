@@ -4,7 +4,7 @@
 #ifndef OPENSSL_BENCHMARK /* This symbolic name is unique and should match the file name. */
 #define OPENSSL_BENCHMARK /* This expression makes sure that this header file is only included once. */
 #include <openssl/types.h>
-#include <time.h>
+#include <ctime>
 
 struct Benchmark {
     clock_t encryption_time_100mb;

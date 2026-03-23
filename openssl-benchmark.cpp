@@ -23,6 +23,13 @@ void generate_plaintext(unsigned char *plaintext, const int size) {
     }
 }
 
+/**
+ * Benchmark the encryption and decryption of a given cipher with specified key and IV, storing the results in the provided benchmark struct.
+ * @param cipher
+ * @param key The cipher key
+ * @param iv The initialization vector
+ * @param benchmark The benchmark struct to store the results in
+ */
 void benchmark_cipher(const EVP_CIPHER *cipher, const unsigned char key[], const unsigned char iv[], Benchmark& benchmark) {
     auto *plaintext_100mb = new unsigned char[PLAINTEXT_SIZE_100MB];
     auto *ciphertext_100mb = new unsigned char[PLAINTEXT_SIZE_100MB + EVP_MAX_BLOCK_LENGTH];
@@ -98,6 +105,10 @@ void handleErrors() {
     abort();
 }
 
+/**
+ * Encrypts the given plaintext using the specified cipher, key, and IV, and stores the resulting ciphertext in the provided buffer. Returns the length of the ciphertext.
+ * Adapted from the assignment instructions
+ */
 int encrypt(const unsigned char *plaintext,
             const int plaintext_len,
             const EVP_CIPHER *cipher,

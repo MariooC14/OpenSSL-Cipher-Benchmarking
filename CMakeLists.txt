@@ -13,3 +13,7 @@ link_libraries(crypto)
 add_executable(openssl_benchmark main.cpp
         openssl-benchmark.h
         openssl-benchmark.cpp)
+
+add_executable(triple_des_benchmark triple-des-benchmark.cpp
+        openssl-benchmark.h
+        openssl-benchmark.cpp)

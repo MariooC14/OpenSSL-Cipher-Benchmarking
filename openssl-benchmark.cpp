@@ -6,6 +6,16 @@
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <iostream>
+#include <random>
+
+void generate_plaintext_random(unsigned char *plaintext, const int size) {
+    std::random_device rd;
+    std::mt19937 mt(rd());
+    std::uniform_real_distribution dist(1.0, 256.0);
+    for (size_t j = 0; j < size; ++j) {
+        plaintext[j] = static_cast<unsigned char>(dist(mt));
+    }
+}
 
 /**
  * Benchmark the encryption and decryption of a given cipher with specified key and IV, storing the results in the provided benchmark struct.

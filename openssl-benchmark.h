@@ -14,7 +14,7 @@ struct Benchmark {
 };
 
 void handleErrors();
-void generate_plaintext_lorem(unsigned char *plaintext, int size);
+void generate_plaintext_random(unsigned char *plaintext, int size);
 int encrypt(const unsigned char *plaintext,
             int plaintext_len,
             const EVP_CIPHER *cipher,

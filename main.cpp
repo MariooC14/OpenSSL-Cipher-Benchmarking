@@ -8,7 +8,6 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
-#include <random>
 #include "openssl-benchmark.h"
 #include <openssl/conf.h>
 #include <openssl/err.h>
@@ -90,17 +89,8 @@ const unsigned char iv[] = {
     0x38, 0x39, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35
 };
 
-const int PLAINTEXT_SIZE_100MB = 100 * 1024 * 1024;
-const int PLAINTEXT_SIZE_1GB = 1024 * 1024 * 1024;
-
-void generate_plaintext_random(unsigned char *plaintext, const int size) {
-    std::random_device rd;
-    std::mt19937 mt(rd());
-    std::uniform_real_distribution dist(1.0, 256.0);
-    for (size_t j = 0; j < size; ++j) {
-        plaintext[j] = static_cast<unsigned char>(dist(mt));
-    }
-}
+constexpr int PLAINTEXT_SIZE_100MB = 100 * 1024 * 1024;
+constexpr int PLAINTEXT_SIZE_1GB = 1024 * 1024 * 1024;
 
 int main() {
     std::ofstream csv_file("benchmark-results-2.csv");
